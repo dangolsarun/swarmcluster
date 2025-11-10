@@ -1,0 +1,101 @@
+version: "3.8"
+
+networks:
+  monitoring_net:
+    driver: overlay
+    attachable: true
+
+configs:
+  snmp-config:
+    external: true
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=90d"
+      - "--web.listen-address=:9090"
+    volumes:
+      - /mnt/swarmdata/monitoring/prometheus:/prometheus
+      - /mnt/swarmdata/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring_net
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    volumes:
+      - /mnt/swarmdata/monitoring/alertmanager:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring_net
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == worker
+
+  grafana:
+    image: grafana/grafana:latest
+    user: "0:0"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SERVER_ROOT_URL=http://192.168.48.48:3000
+    volumes:
+      - /mnt/swarmdata/monitoring/grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring_net
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == worker
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring_net
+    deploy:
+      mode: global
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring_net
+    deploy:
+      mode: global
+
+  snmp-exporter:
+    image: prom/snmp-exporter:v0.29.0
+    volumes:
+      - /mnt/swarmdata/monitoring/snmp/snmp.yml:/etc/snmp_exporter/snmp.yml:ro  
+    ports:
+      - "9116:9116"
+    networks:
+      - monitoring_net
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == worker
