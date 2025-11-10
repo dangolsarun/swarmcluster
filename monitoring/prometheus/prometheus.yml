@@ -1,0 +1,37 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["192.168.48.48:9090"]
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets:
+          - "192.168.48.42:9100"
+          - "192.168.48.43:9100"
+          - "192.168.48.44:9100"
+          - "192.168.48.45:9100"
+          - "192.168.48.46:9100"
+          - "192.168.48.47:9100"
+
+  - job_name: "cadvisor"
+    static_configs:
+      - targets:
+          - "192.168.48.42:8080"
+          - "192.168.48.43:8080"
+          - "192.168.48.44:8080"
+          - "192.168.48.45:8080"
+          - "192.168.48.46:8080"
+          - "192.168.48.47:8080"
+
+  - job_name: "snmp"
+    static_configs:
+      - targets:
+          - "192.168.1.2"  # switch 1
+          - "192.168.1.3"  # switch 2
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+
