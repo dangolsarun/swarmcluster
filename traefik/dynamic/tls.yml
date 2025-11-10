@@ -1,0 +1,10 @@
+tls:
+  certificates:
+    - certFile: /certs/dishhome.crt
+      keyFile: /certs/dishhome.key
+  
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/dishhome.crt
+        keyFile: /certs/dishhome.key
